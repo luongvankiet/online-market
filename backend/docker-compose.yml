@@ -1,0 +1,50 @@
+version: '3.5'
+networks:
+  larave_for_online_market:
+services:
+  nginx_for_online_market:
+    #this is where we set our container service name
+    image: nginx:stable-alpine
+    container_name: nginx_web_online_market
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html #the server site files will be mapped to our root directory
+      - ./nginx/default3.conf:/etc/nginx/conf.d/default.conf #map the default config file
+    depends_on:
+      - php_for_online_market
+      - mysql_for_onLine_market
+    networks:
+      - larave_for_online_market
+  mysql_for_onLine_market:
+    image: mysql:8.0
+    container_name: mysql_for_onLine_market
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "4306:3306" #host port is set at 4306, 3306 is the default port for mysql in the container
+    volumes:
+      - ./mysql_files:/var/lib/mysql #we are now using the mysql_files directory
+
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - larave_for_online_market
+  php_for_online_market:
+    build:
+      context: .
+      dockerfile: Dockerfile #use the Dockerfile created earlier to build the image for this container
+    container_name: php_for_online_market
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql_for_onLine_market
+    networks:
+      - larave_for_online_market
